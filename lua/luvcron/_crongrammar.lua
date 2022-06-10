@@ -93,7 +93,7 @@ pound_sign            <- '#'
 special               <- '@reboot' / '@yearly' / '@annualy' / '@monthly' / '@weekly' / '@daily' / '@midnight' / '@hourly'
 ]=]
 
-M.test = function()
+M.main = function()
   local lulpeg = require "user.lulpeg"
   local re = lulpeg.re
   -- print(re.match(p, p))
