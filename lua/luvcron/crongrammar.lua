@@ -41,13 +41,13 @@ local M = {}
 
 local cronExpression = [=[
 cronExpression        <- {| special / exp |}
-exp                   <- {| minute_exp s hour_exp s day_of_month_exp s month_exp s day_of_week_exp s command_exp |}
+exp                   <- {| minute_exp %s hour_exp %s day_of_month_exp %s month_exp %s day_of_week_exp %s (year_exp %s)? command_exp |}
 minute_exp            <- all / minute_increment / minute (',' minute / minute_range)*
 hour_exp              <- all / hour_increment / hour (',' hour / hour_range)*
 day_of_month_exp      <- all / any / last / last_weekday_dom / last_dom / last_dom_range / dom_increment / dom (',' dom / dom_range)*
 month_exp             <- all / month_increment / month (',' month / month_range)*
 day_of_week_exp       <- all / any / last_dow_range / last_dow / nth_dow / dow (',' dow / dow_range)*
-command_exp           <- (year_exp s)? cmd_exp
+command_exp           <- [A-Za-z0-9_/-]?
 year_exp              <- all / year_increment / year (',' year / year_range)*
 
 minute_range          <- minute '-' minute
@@ -101,8 +101,6 @@ year_range            <- year '-' year
 year                  <- [1970-2099]
 yincrement            <- [0]?[1-9]*
 
-cmd_exp               <- ([A-Za-z][A-Za-z0-9_/])*
-
 last                  <- 'L'
 all                   <- '*'
 any                   <- '?'
@@ -116,18 +114,15 @@ weekly                <- '@weekly'
 daily                 <- '@daily'
 midnight              <- '@midnight'
 hourly                <- '@hourly'
-
---define space char
-s                <- %s
 ]=]
 
 local test_cronExpression = [=[
-cronExpression        <- {| exp |}
-exp                   <- {| all / any |}
+cronExpression        <- exp
+exp                   <- {| {:directive: '' -> 'minute':} (all / any) |}
 
 last                  <- 'L'
-all                   <- '*'
-any                   <- '?'
+all                   <- {| {:value: '' -> 'all':} '*' |}
+any                   <- {| {:value: '' -> 'any':} '?' |}
 pound_sign            <- '#'
 
 --define space char
@@ -136,8 +131,9 @@ s                <- %s
 
 local lulpeg = require "lua.luvcron.lulpeg"
 local re = lulpeg.re
+local inspect = require "lua.luvcron.inspect"
 local p = re.compile(test_cronExpression)
-print(p:match "*")
+print(inspect(re.match("*,?", test_cronExpression)))
 -- print(p:match "* * * * ? *")
 
 -- local p = re.compile [[
