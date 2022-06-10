@@ -121,19 +121,51 @@ cronExpression        <- exp
 exp                   <- {| {:directive: '' -> 'minute':} (all / any) |}
 
 last                  <- 'L'
-all                   <- {| {:value: '' -> 'all':} '*' |}
-any                   <- {| {:value: '' -> 'any':} '?' |}
+all                   <- {| {'*'} |}
+any                   <- {| {'?'} |}
 pound_sign            <- '#'
-
---define space char
-s                <- %s
 ]=]
+
+local sort, rep, concat = table.sort, string.rep, table.concat
+
+local function serialise(var, sorted, indent)
+  if type(var) == "string" then
+    return "'" .. var .. "'"
+  elseif type(var) == "table" then
+    local keys = {}
+    for key, _ in pairs(var) do
+      keys[#keys + 1] = key
+    end
+    if sorted then
+      sort(keys, function(a, b)
+        if type(a) == type(b) and (type(a) == "number" or type(a) == "string") then
+          return a < b
+        elseif type(a) == "number" and type(b) ~= "number" then
+          return true
+        else
+          return false
+        end
+      end)
+    end
+    local strings = {}
+    local indent = indent or 0
+    for _, key in ipairs(keys) do
+      strings[#strings + 1] = rep("\t", indent + 1)
+        .. serialise(key, sorted, indent + 1)
+        .. " = "
+        .. serialise(var[key], sorted, indent + 1)
+    end
+    return "table (\n" .. concat(strings, "\n") .. "\n" .. rep("\t", indent) .. ")"
+  else
+    return tostring(var)
+  end
+end
 
 local lulpeg = require "lua.luvcron.lulpeg"
 local re = lulpeg.re
 local inspect = require "lua.luvcron.inspect"
 local p = re.compile(test_cronExpression)
-print(inspect(re.match("*,?", test_cronExpression)))
+print(inspect(p:match "*,?"))
 -- print(p:match "* * * * ? *")
 
 -- local p = re.compile [[
