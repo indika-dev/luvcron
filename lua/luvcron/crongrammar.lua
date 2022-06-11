@@ -117,16 +117,22 @@ hourly                <- '@hourly'
 ]=]
 
 local test_cronExpression = [=[
-cronExpression        <- {| minute_exp %s hour_exp |}
-minute_exp            <- {| {:field: '' -> 'minute':} (all / number ((increment / range / ',') number)*) |}
+cronExpression        <- {| minute_exp %s hour_exp !. |}
+minute_exp            <- {| {:field: '' -> 'minute':} (all / list) |}
 hour_exp              <- {| {:field: '' -> 'hour':} (all / any) |}
 
-number                <- {[0-9]*}
+number                <- {[0-9]+}
 
 all                   <- {| {:op: '' -> 'all':} '*' |}
 any                   <- {| {:op: '' -> 'any':} '?' |}
-increment             <- {| {:op: '' -> 'inc':} '/' |}
-range                 <- {| {:op: '' -> 'range':} '-' |}
+
+list                  <- ( singleint_or_range ( ',' singleint_or_range ) * ) -> {}
+singleint_or_range    <- range / increment / singleint
+singleint             <- { int } -> {}
+range                 <- ( { int } {'-'} { int } ) -> {}
+increment             <- ( { int } {'/'} { int } ) -> {}
+int                   <- %d+
+
 ]=]
 
 local sort, rep, concat = table.sort, string.rep, table.concat
@@ -168,7 +174,7 @@ local lulpeg = require "lua.luvcron.lulpeg"
 local re = lulpeg.re
 local inspect = require "lua.luvcron.inspect"
 local p = re.compile(test_cronExpression)
-print(inspect(p:match "10,10-5 ?"))
+print(inspect(p:match "10,10-5,10/5 ?"))
 -- print(p:match "* * * * ? *")
 
 -- local p = re.compile [[
