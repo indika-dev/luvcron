@@ -41,7 +41,7 @@ local M = {}
 
 local cronExpression = [=[
 cronExpression        <- {| special / exp |}
-exp                   <- {| minute_exp %s hour_exp %s day_of_month_exp %s month_exp %s day_of_week_exp %s (year_exp %s)? command_exp |}
+exp                   <- {| minute_exp %s hour_exp |} -- %s day_of_month_exp %s month_exp %s day_of_week_exp %s (year_exp %s)? command_exp |}
 minute_exp            <- all / minute_increment / minute (',' minute / minute_range)*
 hour_exp              <- all / hour_increment / hour (',' hour / hour_range)*
 day_of_month_exp      <- all / any / last / last_weekday_dom / last_dom / last_dom_range / dom_increment / dom (',' dom / dom_range)*
@@ -52,23 +52,23 @@ year_exp              <- all / year_increment / year (',' year / year_range)*
 
 minute_range          <- minute '-' minute
 minute_increment      <- minute '/' minute
-minute                <- [0]?[0-9] / [1-5][0-9]
+minute                <- [0-9]*
 
 hour_range            <- hour '-' hour
 hour_increment        <- hour '/' hour
-hour                  <- [0]?[0-9] / [1][0-9] / [2][0-3]
+hour                  <- [0-9]*
 
 dom_increment         <- dom '/' dom
 dom_range             <- dom '-' dom
 last_weekday_dom      <- 'LW'
 last_dom_range        <- last '-' dom
 last_dom              <- dom last
-dom                   <- [0]?[1-9] / [12][0-9] / [3][01]
+dom                   <- [0-9]*
 
 month_increment       <- month '/' moincrement
 month_range           <- month '-' month
 month                 <- january / february / march / april / may / june / july / august / september / october / november / december
-moincrement           <- [0]?[1-9] / [1][012]
+moincrement           <- [0-9]*
 
 january               <- '01' / '1' / 'jan' / 'january'
 february              <- '02' / '2' / 'feb' / 'february'
@@ -99,7 +99,7 @@ nth_weekday_in_month  <- [1-5]
 year_increment        <- year '/' yincrement
 year_range            <- year '-' year
 year                  <- [1970-2099]
-yincrement            <- [0]?[1-9]*
+yincrement            <- [0-9]*
 
 last                  <- 'L'
 all                   <- '*'
@@ -117,13 +117,17 @@ hourly                <- '@hourly'
 ]=]
 
 local test_cronExpression = [=[
-cronExpression        <- exp
-exp                   <- {| {:directive: '' -> 'minute':} (all / any) |}
+cronExpression        <- {| minute_exp %s hour_exp |}
+minute_exp            <- {| {:field: '' -> 'minute':} (all / number ((increment / range / list) number)*) |}
+hour_exp              <- {| {:field: '' -> 'hour':} (all / any) |}
 
-last                  <- 'L'
-all                   <- {| {'*'} |}
-any                   <- {| {'?'} |}
-pound_sign            <- '#'
+number                <- {[0-9]*}
+
+all                   <- {| {:op: '' -> 'all':} '*' |}
+any                   <- {| {:op: '' -> 'any':} '?' |}
+increment             <- {| {:op: '' -> 'inc':} '/' |}
+range                 <- {| {:op: '' -> 'range':} '-' |}
+list                  <- ','
 ]=]
 
 local sort, rep, concat = table.sort, string.rep, table.concat
@@ -165,7 +169,7 @@ local lulpeg = require "lua.luvcron.lulpeg"
 local re = lulpeg.re
 local inspect = require "lua.luvcron.inspect"
 local p = re.compile(test_cronExpression)
-print(inspect(p:match "*,?"))
+print(inspect(p:match "10,10-5 ?"))
 -- print(p:match "* * * * ? *")
 
 -- local p = re.compile [[

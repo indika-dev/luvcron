@@ -6,3 +6,6 @@ lint:
 
 docgen:
 	nvim --headless --noplugin -u scripts/minimal_init.vim -c "luafile ./scripts/gendocs.lua" -c 'qa'
+
+run:
+	lua5.1 lua/luvcron/crongrammar.lua
