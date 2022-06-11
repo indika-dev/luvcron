@@ -118,7 +118,7 @@ hourly                <- '@hourly'
 
 local test_cronExpression = [=[
 cronExpression        <- {| minute_exp %s hour_exp |}
-minute_exp            <- {| {:field: '' -> 'minute':} (all / number ((increment / range / list) number)*) |}
+minute_exp            <- {| {:field: '' -> 'minute':} (all / number ((increment / range / ',') number)*) |}
 hour_exp              <- {| {:field: '' -> 'hour':} (all / any) |}
 
 number                <- {[0-9]*}
@@ -127,7 +127,6 @@ all                   <- {| {:op: '' -> 'all':} '*' |}
 any                   <- {| {:op: '' -> 'any':} '?' |}
 increment             <- {| {:op: '' -> 'inc':} '/' |}
 range                 <- {| {:op: '' -> 'range':} '-' |}
-list                  <- ','
 ]=]
 
 local sort, rep, concat = table.sort, string.rep, table.concat
