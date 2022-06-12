@@ -40,36 +40,53 @@ local M = {}
 -- ]=]
 
 local cronExpression = [=[
-cronExpression        <- {| special / exp |}
-exp                   <- {| minute_exp %s hour_exp %s day_of_month_exp %s month_exp %s day_of_week_exp %s (year_exp %s)? command_exp |}
-minute_exp            <- all / minute_increment / minute (',' minute / minute_range)*
-hour_exp              <- all / hour_increment / hour (',' hour / hour_range)*
-day_of_month_exp      <- all / any / last / last_weekday_dom / last_dom / last_dom_range / dom_increment / dom (',' dom / dom_range)*
-month_exp             <- all / month_increment / month (',' month / month_range)*
-day_of_week_exp       <- all / any / last_dow_range / last_dow / nth_dow / dow (',' dow / dow_range)*
-command_exp           <- [A-Za-z0-9_/-]?
-year_exp              <- all / year_increment / year (',' year / year_range)*
+cronExpression        <- {| (special / minute_exp %s hour_exp %s day_of_month_exp %s month_exp %s day_of_week_exp %s (year_exp %s)? command_exp) !. |}
+minute_exp            <- all / list
+hour_exp              <- all / list
+day_of_month_exp      <- all / any / last / last_weekday_dom / last_dom / last_dom_range / list
+month_exp             <- all / monthlist
+day_of_week_exp       <- all / any / last_dow_range / last_dow / nth_dow / daylist
+command_exp           <- %a+
+year_exp              <- all / list
 
-minute_range          <- minute '-' minute
-minute_increment      <- minute '/' minute
-minute                <- [0-9]*
-
-hour_range            <- hour '-' hour
-hour_increment        <- hour '/' hour
-hour                  <- [0-9]*
-
-dom_increment         <- dom '/' dom
-dom_range             <- dom '-' dom
 last_weekday_dom      <- 'LW'
 last_dom_range        <- last '-' dom
 last_dom              <- dom last
-dom                   <- [0-9]*
+dom                   <- %d+
 
-month_increment       <- month '/' moincrement
-month_range           <- month '-' month
+last_dow_range        <- last '-' dow
+last_dow              <- dow last
+nth_dow               <- dow pound_sign nth_weekday_in_month
+nth_weekday_in_month  <- [1-5]
+
+list                  <- ( singleint_or_range ( ',' singleint_or_range ) * )
+singleint_or_range    <- range / increment / singleint
+singleint             <- { int } -> {}
+range                 <- ( { int } {'-'} { int } ) -> {}
+increment             <- ( { int } {'/'} { int } ) -> {}
+int                   <- %d+
+
+daylist               <- ( singleday_or_range ( ',' singleday_or_range ) * )
+singleday_or_range    <- dayrange / dayincrement / singleday
+singleday             <- { day } -> {}
+dayrange              <- ( { day } {'-'} { day } ) -> {}
+dayincrement          <- ( { day } {'/'} { int } ) -> {}
+day                   <- monday / tuesday / wednesday / thursday / friday / saturday / sunday
+monday                <- '01' / '1' / 'mon' / 'monday'
+tuesday               <- '02' / '2' / 'tue' / 'tuesday'
+wednesday             <- '03' / '3' / 'wed' / 'wednesday'
+thursday              <- '04' / '4' / 'thu' / 'thursday'
+friday                <- '05' / '5' / 'fri' / 'friday'
+saturday              <- '06' / '6' / 'sat' / 'saturday'
+sunday                <- '07' / '7' / 'sun' / 'sunday'
+
+
+monthlist             <- ( singlemonth_or_range ( ',' singlemonth_or_range ) * )
+singlemonth_or_range  <- monthrange / monthincrement / singlemonth
+singlemonth           <- { month } -> {}
+monthrange            <- ( { month } {'-'} { month } ) -> {}
+monthincrement        <- ( { month } {'/'} { int } ) -> {}
 month                 <- january / february / march / april / may / june / july / august / september / october / november / december
-moincrement           <- [0-9]*
-
 january               <- '01' / '1' / 'jan' / 'january'
 february              <- '02' / '2' / 'feb' / 'february'
 march                 <- '03' / '3' / 'mar' / 'march'
@@ -83,29 +100,11 @@ october               <- '10' / 'oct' / 'october'
 november              <- '11' / 'nov' / 'november'
 december              <- '12' / 'dec' / 'december'
 
-last_dow_range        <- last '-' dow
-last_dow              <- dow last
-nth_dow               <- dow pound_sign nth_weekday_in_month
-dow                   <- monday / tuesday / wednesday / thursday / friday / saturday / sunday
-monday                <- '01' / '1' / 'mon' / 'monday'
-tuesday               <- '02' / '2' / 'tue' / 'tuesday'
-wednesday             <- '03' / '3' / 'wed' / 'wednesday'
-thursday              <- '04' / '4' / 'thu' / 'thursday'
-friday                <- '05' / '5' / 'fri' / 'friday'
-saturday              <- '06' / '6' / 'sat' / 'saturday'
-sunday                <- '07' / '7' / 'sun' / 'sunday'
-nth_weekday_in_month  <- [1-5]
-
-year_increment        <- year '/' yincrement
-year_range            <- year '-' year
-year                  <- [1970-2099]
-yincrement            <- [0-9]*
-
 last                  <- 'L'
 all                   <- '*'
 any                   <- '?'
 pound_sign            <- '#'
-special               <- {| reboot / yearly / annualy / monthly / weekly / daily / midnight / hourly |}
+special               <- reboot / yearly / annualy / monthly / weekly / daily / midnight / hourly
 reboot                <- '@reboot'
 yearly                <- '@yearly'
 annualy               <- '@annualy'
@@ -117,7 +116,7 @@ hourly                <- '@hourly'
 ]=]
 
 local test_cronExpression = [=[
-cronExpression        <- {| (special / minute_exp %s hour_exp) !. |}
+cronExpression        <- (special / minute_exp %s hour_exp) !.
 minute_exp            <- {| {:field: '' -> 'minute':} (all / list) |}
 hour_exp              <- {| {:field: '' -> 'hour':} (all / any) |}
 
@@ -125,6 +124,7 @@ number                <- {[0-9]+}
 
 all                   <- {| {:op: '' -> 'all':} '*' |}
 any                   <- {| {:op: '' -> 'any':} '?' |}
+last_weekday_dom      <- 'LW'
 
 list                  <- ( singleint_or_range ( ',' singleint_or_range ) * )
 singleint_or_range    <- range / increment / singleint
@@ -182,10 +182,10 @@ end
 local lulpeg = require "lua.luvcron.lulpeg"
 local re = lulpeg.re
 local inspect = require "lua.luvcron.inspect"
-local p = re.compile(test_cronExpression)
-print(inspect(p:match "10,10-5,10/5 ?"))
-print(inspect(p:match "@reboot"))
--- print(p:match "* * * * ? *")
+local p = re.compile(cronExpression)
+-- print(inspect(p:match "10,10-5,10/5 ?"))
+-- print(inspect(p:match "@reboot"))
+print(inspect(p:match "* * * * ? * execute"))
 
 -- local p = re.compile [[
 --       text <- {~ item* ~}
