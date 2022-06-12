@@ -41,7 +41,7 @@ local M = {}
 
 local cronExpression = [=[
 cronExpression        <- {| special / exp |}
-exp                   <- {| minute_exp %s hour_exp |} -- %s day_of_month_exp %s month_exp %s day_of_week_exp %s (year_exp %s)? command_exp |}
+exp                   <- {| minute_exp %s hour_exp %s day_of_month_exp %s month_exp %s day_of_week_exp %s (year_exp %s)? command_exp |}
 minute_exp            <- all / minute_increment / minute (',' minute / minute_range)*
 hour_exp              <- all / hour_increment / hour (',' hour / hour_range)*
 day_of_month_exp      <- all / any / last / last_weekday_dom / last_dom / last_dom_range / dom_increment / dom (',' dom / dom_range)*
@@ -117,7 +117,7 @@ hourly                <- '@hourly'
 ]=]
 
 local test_cronExpression = [=[
-cronExpression        <- {| minute_exp %s hour_exp !. |}
+cronExpression        <- {| (special / minute_exp %s hour_exp) !. |}
 minute_exp            <- {| {:field: '' -> 'minute':} (all / list) |}
 hour_exp              <- {| {:field: '' -> 'hour':} (all / any) |}
 
@@ -126,13 +126,22 @@ number                <- {[0-9]+}
 all                   <- {| {:op: '' -> 'all':} '*' |}
 any                   <- {| {:op: '' -> 'any':} '?' |}
 
-list                  <- ( singleint_or_range ( ',' singleint_or_range ) * ) -> {}
+list                  <- ( singleint_or_range ( ',' singleint_or_range ) * )
 singleint_or_range    <- range / increment / singleint
 singleint             <- { int } -> {}
 range                 <- ( { int } {'-'} { int } ) -> {}
 increment             <- ( { int } {'/'} { int } ) -> {}
 int                   <- %d+
 
+special               <- {| {:special: '' -> '':} {reboot} / {yearly} / {annualy} / {monthly} / {weekly} / {daily} / {midnight} / {hourly} |}
+reboot                <- '@reboot'
+yearly                <- '@yearly'
+annualy               <- '@annualy'
+monthly               <- '@monthly'
+weekly                <- '@weekly'
+daily                 <- '@daily'
+midnight              <- '@midnight'
+hourly                <- '@hourly'
 ]=]
 
 local sort, rep, concat = table.sort, string.rep, table.concat
@@ -175,6 +184,7 @@ local re = lulpeg.re
 local inspect = require "lua.luvcron.inspect"
 local p = re.compile(test_cronExpression)
 print(inspect(p:match "10,10-5,10/5 ?"))
+print(inspect(p:match "@reboot"))
 -- print(p:match "* * * * ? *")
 
 -- local p = re.compile [[
