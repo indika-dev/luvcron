@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 --
 -- @see https://github.com/pygy/LuLPeg
 --

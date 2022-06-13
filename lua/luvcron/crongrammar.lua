@@ -40,7 +40,7 @@ local M = {}
 -- ]=]
 
 local cronExpression = [=[
-cronExpression        <- (special / minute_exp %s hour_exp %s day_of_month_exp %s month_exp %s day_of_week_exp %s (year_exp %s)? command_exp) !.
+cronExpression        <- (special / minute_exp %s hour_exp %s day_of_month_exp %s month_exp %s day_of_week_exp %s year_exp %s command_exp) !.
 minute_exp            <- all / list
 hour_exp              <- all / list
 day_of_month_exp      <- all / any / last / last_weekday_dom / last_dom / last_dom_range / list
@@ -104,7 +104,7 @@ last                  <- 'L'
 all                   <- '*'
 any                   <- '?'
 pound_sign            <- '#'
-special               <- reboot / yearly / annualy / monthly / weekly / daily / midnight / hourly
+special               <- {| {:special: '' -> '':} {reboot} / {yearly} / {annualy} / {monthly} / {weekly} / {daily} / {midnight} / {hourly} |}
 reboot                <- '@reboot'
 yearly                <- '@yearly'
 annualy               <- '@annualy'
@@ -146,9 +146,10 @@ hourly                <- '@hourly'
 
 local sort, rep, concat = table.sort, string.rep, table.concat
 
--- shows the position in a string
+-- Shows the position in a string.
 -- @tparam string s the string to show the position
 -- @tparam int pos the position inside the string
+-- @treturn {string}
 local function showPosInString(s, pos)
   if pos >= string.len(s) then
     return s .. "[]"
@@ -181,9 +182,9 @@ local function serialise(var, sorted, indent)
     local indent = indent or 0
     for _, key in ipairs(keys) do
       strings[#strings + 1] = rep("\t", indent + 1)
-        .. serialise(key, sorted, indent + 1)
-        .. " = "
-        .. serialise(var[key], sorted, indent + 1)
+          .. serialise(key, sorted, indent + 1)
+          .. " = "
+          .. serialise(var[key], sorted, indent + 1)
     end
     return "table (\n" .. concat(strings, "\n") .. "\n" .. rep("\t", indent) .. ")"
   else
@@ -198,7 +199,9 @@ local inspect = require "lua.luvcron.inspect"
 logger.usecolor = false
 
 logger.info(self, "compiling cronExpression")
-local p = re.compile(cronExpression)
+local _, p = pcall(function()
+  return re.compile(cronExpression)
+end)
 if not p or type(p) ~= "userdata" then
   logger.error(self, "an error occured during compilation: " .. p)
 else
@@ -206,11 +209,17 @@ else
   -- local testExpression = "10,10-5,10/5 ?"
   -- local testExpression = "@reboot"
 
-  local ast = p:match(testExpression)
-  if not ast or type(ast) ~= "table" then
-    logger.error(self, "an error occured while parsing @ pos " .. ast .. " : " .. showPosInString(testExpression, ast))
+  local error, ast = pcall(function()
+    return p:match(testExpression)
+  end)
+  if error and ast == nil then
+    logger.error(self, 'the expression "' .. testExpression .. '" is not parsable')
+  elseif type(ast) == "number" then
+    logger.warn(self, 'no AST was generated for the expression "' .. testExpression .. '"')
+  elseif type(ast) == "string" then
+    logger.error(self, 'the following error occured during parsing "' .. testExpression .. '": ' .. ast)
   else
-    print(inspect(ast))
+    logger.trace(self, 'AST("' .. testExpression .. '") -> \n' .. inspect(ast))
   end
 end
 
