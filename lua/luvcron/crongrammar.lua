@@ -40,7 +40,7 @@ local M = {}
 -- ]=]
 
 local cronExpression = [=[
-cronExpression        <- {| (special / minute_exp %s hour_exp %s day_of_month_exp %s month_exp %s day_of_week_exp %s (year_exp %s)? command_exp) !. |}
+cronExpression        <- (special / minute_exp %s hour_exp %s day_of_month_exp %s month_exp %s day_of_week_exp %s (year_exp %s)? command_exp) !.
 minute_exp            <- all / list
 hour_exp              <- all / list
 day_of_month_exp      <- all / any / last / last_weekday_dom / last_dom / last_dom_range / list
@@ -146,6 +146,18 @@ hourly                <- '@hourly'
 
 local sort, rep, concat = table.sort, string.rep, table.concat
 
+-- shows the position in a string
+-- @tparam string s the string to show the position
+-- @tparam int pos the position inside the string
+local function showPosInString(s, pos)
+  if pos >= string.len(s) then
+    return s .. "[]"
+  elseif pos <= 0 then
+    return "[]" .. s
+  end
+  return s:sub(0, pos - 1) .. "[" .. s:sub(pos, pos) .. "]" .. s:sub(pos + 1, string.len(s))
+end
+
 local function serialise(var, sorted, indent)
   if type(var) == "string" then
     return "'" .. var .. "'"
@@ -179,13 +191,28 @@ local function serialise(var, sorted, indent)
   end
 end
 
+local logger = require "lua.luvcron.log"
 local lulpeg = require "lua.luvcron.lulpeg"
 local re = lulpeg.re
 local inspect = require "lua.luvcron.inspect"
+logger.usecolor = false
+
+logger.info(self, "compiling cronExpression")
 local p = re.compile(cronExpression)
--- print(inspect(p:match "10,10-5,10/5 ?"))
--- print(inspect(p:match "@reboot"))
-print(inspect(p:match "* * * * ? * execute"))
+if not p or type(p) ~= "userdata" then
+  logger.error(self, "an error occured during compilation: " .. p)
+else
+  local testExpression = "* * * * ? * execute"
+  -- local testExpression = "10,10-5,10/5 ?"
+  -- local testExpression = "@reboot"
+
+  local ast = p:match(testExpression)
+  if not ast or type(ast) ~= "table" then
+    logger.error(self, "an error occured while parsing @ pos " .. ast .. " : " .. showPosInString(testExpression, ast))
+  else
+    print(inspect(ast))
+  end
+end
 
 -- local p = re.compile [[
 --       text <- {~ item* ~}
