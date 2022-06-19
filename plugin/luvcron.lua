@@ -1,12 +1,12 @@
-if 1 ~= vim.fn.has "nvim-0.7.0" then
-  vim.api.nvim_err_writeln "Telescope.nvim requires at least nvim-0.7.0. See `:h telescope.changelog-1851`"
-  return
-end
+-- if 1 ~= vim.fn.has "nvim-0.7.0" then
+--   vim.api.nvim_err_writeln "Telescope.nvim requires at least nvim-0.7.0. See `:h telescope.changelog-1851`"
+--   return
+-- end
 
-if vim.g.loaded_telescope == 1 then
+if vim.g.loaded_luvcron == 1 then
   return
 end
-vim.g.loaded_telescope = 1
+vim.g.loaded_luvcron = 1
 
 local highlights = {
   -- Sets the highlight for selected items within the picker.
@@ -91,53 +91,53 @@ local highlights = {
   TelescopeResultsDiffUntracked = { default = true, link = "NonText" },
 }
 
-for k, v in pairs(highlights) do
-  vim.api.nvim_set_hl(0, k, v)
-end
+-- for k, v in pairs(highlights) do
+--   vim.api.nvim_set_hl(0, k, v)
+-- end
 
 -- This is like "<C-R>" in your terminal.
 --     To use it, do `cmap <C-R> <Plug>(TelescopeFuzzyCommandSearch)
-vim.keymap.set(
-  "c",
-  "<Plug>(TelescopeFuzzyCommandSearch)",
-  "<C-\\>e \"lua require('telescope.builtin').command_history "
-    .. '{ default_text = [=[" . escape(getcmdline(), \'"\') . "]=] }"<CR><CR>',
-  { silent = true, noremap = true }
-)
+-- vim.keymap.set(
+--   "c",
+--   "<Plug>(TelescopeFuzzyCommandSearch)",
+--   "<C-\\>e \"lua require('telescope.builtin').command_history "
+--     .. '{ default_text = [=[" . escape(getcmdline(), \'"\') . "]=] }"<CR><CR>',
+--   { silent = true, noremap = true }
+-- )
 
-vim.api.nvim_create_user_command("Telescope", function(opts)
-  require("telescope.command").load_command(unpack(opts.fargs))
-end, {
-  nargs = "*",
-  complete = function(_, line)
-    local builtin_list = vim.tbl_keys(require "telescope.builtin")
-    local extensions_list = vim.tbl_keys(require("telescope._extensions").manager)
+-- vim.api.nvim_create_user_command("Telescope", function(opts)
+--   require("telescope.command").load_command(unpack(opts.fargs))
+-- end, {
+--   nargs = "*",
+--   complete = function(_, line)
+--     local builtin_list = vim.tbl_keys(require "telescope.builtin")
+--     local extensions_list = vim.tbl_keys(require("telescope._extensions").manager)
 
-    local l = vim.split(line, "%s+")
-    local n = #l - 2
+--     local l = vim.split(line, "%s+")
+--     local n = #l - 2
 
-    if n == 0 then
-      return vim.tbl_filter(function(val)
-        return vim.startswith(val, l[2])
-      end, vim.tbl_extend("force", builtin_list, extensions_list))
-    end
+--     if n == 0 then
+--       return vim.tbl_filter(function(val)
+--         return vim.startswith(val, l[2])
+--       end, vim.tbl_extend("force", builtin_list, extensions_list))
+--     end
 
-    if n == 1 then
-      local is_extension = vim.tbl_filter(function(val)
-        return val == l[2]
-      end, extensions_list)
+--     if n == 1 then
+--       local is_extension = vim.tbl_filter(function(val)
+--         return val == l[2]
+--       end, extensions_list)
 
-      if #is_extension > 0 then
-        local extensions_subcommand_dict = require("telescope.command").get_extensions_subcommand()
-        return vim.tbl_filter(function(val)
-          return vim.startswith(val, l[3])
-        end, extensions_subcommand_dict[l[2]])
-      end
-    end
+--       if #is_extension > 0 then
+--         local extensions_subcommand_dict = require("telescope.command").get_extensions_subcommand()
+--         return vim.tbl_filter(function(val)
+--           return vim.startswith(val, l[3])
+--         end, extensions_subcommand_dict[l[2]])
+--       end
+--     end
 
-    local options_list = vim.tbl_keys(require("telescope.config").values)
-    return vim.tbl_filter(function(val)
-      return vim.startswith(val, l[#l])
-    end, options_list)
-  end,
-})
+--     local options_list = vim.tbl_keys(require("telescope.config").values)
+--     return vim.tbl_filter(function(val)
+--       return vim.startswith(val, l[#l])
+--     end, options_list)
+--   end,
+-- })
