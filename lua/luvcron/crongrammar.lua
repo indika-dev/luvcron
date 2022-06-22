@@ -1,7 +1,7 @@
-local logger = require "lua.luvcron.log"
-local lulpeg = require "lua.luvcron.lulpeg"
+local logger = require "luvcron.log"
+local lulpeg = require "luvcron.lulpeg"
 local re = lulpeg.re
-local inspect = require "lua.luvcron.inspect"
+local inspect = require "luvcron.inspect"
 logger.usecolor = false
 
 -- @module everything you need for compiling a cron expression to an AST representing the expression
@@ -126,7 +126,7 @@ M.parseCronExpression = function(expression)
   if error and ast == nil then
     error('the expression "' .. expression .. '" is not parsable')
   elseif type(ast) == "number" then
-    error('no AST was generated for the expression "' .. showPosInString(expression, ast) .. '"')
+    error('no AST was generated for the expression "' .. M.showPosInString(expression, ast) .. '"')
   elseif type(ast) == "string" then
     error('the following error occured during parsing "' .. expression .. '": ' .. ast)
   else
